@@ -36,13 +36,13 @@ func NewMqttClient(name, server string) *MqttClient {
 
 func (cli *MqttClient) SendHB(topic string) {
 
-    go func() {
+	go func() {
 
-        for {
-            cli.PublishMessage(topic, int64(time.Now().Unix()))
-            time.Sleep(time.Second * 10)
-        }
-    }()
+		for {
+			cli.PublishMessage(topic, int64(time.Now().Unix()))
+			time.Sleep(time.Second * 10)
+		}
+	}()
 }
 
 // Connect (or reconnect) to server
