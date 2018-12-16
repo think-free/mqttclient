@@ -112,8 +112,19 @@ func (cli *MqttClient) SubscribeTopic(topic string, onPublish service.OnPublishF
 	cli.c.Subscribe(submsgset, nil, onPublish)
 }
 
-// PublishMessage to mqtt
+// PublishMessageNoRetain publish a message to mqtt without the retain flag
+func (cli *MqttClient) PublishMessageNoRetain(topic string, value interface{}) {
+
+	cli.publish(topic, value, false)
+}
+
+// PublishMessage publish a message to mqtt with the retain flag
 func (cli *MqttClient) PublishMessage(topic string, value interface{}) {
+
+	cli.publish(topic, value, true)
+}
+
+func (cli *MqttClient) publish(topic string, value interface{}, retain bool) {
 
 	if !cli.isConnected() {
 		log.Println("Client is not connected, can't send", topic, value)
@@ -123,7 +134,7 @@ func (cli *MqttClient) PublishMessage(topic string, value interface{}) {
 	pubmsg := message.NewPublishMessage()
 	pubmsg.SetTopic([]byte(topic))
 	pubmsg.SetQoS(1)
-	pubmsg.SetRetain(true)
+	pubmsg.SetRetain(retain)
 	js, _ := json.Marshal(value)
 	pubmsg.SetPayload(js)
 
