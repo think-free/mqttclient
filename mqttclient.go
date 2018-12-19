@@ -58,7 +58,7 @@ func (cli *MqttClient) Connect() error {
 	msg.SetVersion(4)
 	msg.SetCleanSession(true)
 	msg.SetClientId([]byte(cli.name))
-	msg.SetKeepAlive(10)
+	msg.SetKeepAlive(30)
 	msg.SetWillTopic([]byte(cli.name))
 	msg.SetWillMessage([]byte(cli.name + " client disconnected"))
 	err := cli.c.Connect("tcp://"+cli.server+":1883", msg)
