@@ -15,6 +15,9 @@ import (
 type MqttClient struct {
 	name      string
 	server    string
+	user      string
+	pass      string
+	port      string
 	topics    map[string]*service.OnPublishFunc
 	connected bool
 	c         *service.Client
@@ -27,6 +30,9 @@ func NewMqttClient(name, server string) *MqttClient {
 	cli := &MqttClient{
 		name:      name,
 		server:    server,
+		user:      "",
+		pass:      "",
+		port:      "1883",
 		connected: false,
 		topics:    make(map[string]*service.OnPublishFunc),
 		c:         nil,
@@ -46,10 +52,19 @@ func (cli *MqttClient) SendHB(topic string) {
 	}()
 }
 
+func (cli *MqttClient) SetUserPass(user, pass string){
+	cli.user = user
+	cli.pass = pass
+}
+
+func (cli *MqttClient) SetPort(port string){
+	cli.port = port
+}
+
 // Connect (or reconnect) to server
 func (cli *MqttClient) Connect() error {
 
-	log.Println("[" + cli.name + "] connecting mqtt")
+	log.Println("[" + cli.name + "] connecting mqtt with 30 seconds keep alive")
 
 	cli.setConnected(false)
 
@@ -62,7 +77,13 @@ func (cli *MqttClient) Connect() error {
 	msg.SetKeepAlive(30)
 	msg.SetWillTopic([]byte(cli.name))
 	msg.SetWillMessage([]byte(cli.name + " client disconnected"))
-	err := cli.c.Connect("tcp://"+cli.server+":1883", msg)
+
+	if cli.user != ""{
+		msg.SetUsername([]byte(cli.user))
+		msg.SetPassword([]byte(cli.pass))
+	}
+
+	err := cli.c.Connect("tcp://"+cli.server+":"+cli.port, msg)
 
 	if err == nil {
 
