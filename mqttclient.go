@@ -2,6 +2,7 @@ package mqttclient
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"sync"
 	"time"
@@ -99,17 +100,17 @@ func (cli *MqttClient) isConnected() bool {
 
 // SubscribeTopic subscribe to mqtt
 // Example : func onPublished(msg *message.PublishMessage) error {}
-func (cli *MqttClient) SubscribeTopic(topic string, onPublish service.OnPublishFunc) {
+func (cli *MqttClient) SubscribeTopic(topic string, onPublish service.OnPublishFunc) error {
 
 	cli.topics[topic] = &onPublish
 
 	if !cli.isConnected() {
-		return
+		return errors.New("Client is not connected")
 	}
 
 	submsgset := message.NewSubscribeMessage()
 	submsgset.AddTopic([]byte(topic), 1)
-	cli.c.Subscribe(submsgset, nil, onPublish)
+	return cli.c.Subscribe(submsgset, nil, onPublish)
 }
 
 // PublishMessageNoRetain publish a message to mqtt without the retain flag
