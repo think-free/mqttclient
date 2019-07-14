@@ -108,12 +108,12 @@ func (cli *MqttClient) Connect() error {
 
 func (cli *MqttClient) reconnect (){
 
-	reconnectingMutex.Lock()
-	if reconnecting == false {
-		reconnecting = true
-		reconnectingMutex.Unlock()
+	cli.reconnectingMutex.Lock()
+	if cli.reconnecting == false {
+		cli.reconnecting = true
+		cli.reconnectingMutex.Unlock()
 	} else {
-		reconnectingMutex.Unlock()
+		cli.reconnectingMutex.Unlock()
 		return
 	}
 
@@ -123,9 +123,9 @@ func (cli *MqttClient) reconnect (){
 
 		if cli.isConnected() {
 
-			reconnectingMutex.Lock()
-			reconnecting = false
-			reconnectingMutex.Unlock()
+			cli.reconnectingMutex.Lock()
+			cli.reconnecting = false
+			cli.reconnectingMutex.Unlock()
 			return
 		}
 
