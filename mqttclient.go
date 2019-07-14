@@ -21,6 +21,9 @@ type MqttClient struct {
 	connected bool
 	c         *service.Client
 	sync.Mutex
+
+	reconnecting bool
+	reconnectingMutex sync.Mutex
 }
 
 // NewMqttClient return a mqtt client
@@ -51,12 +54,12 @@ func (cli *MqttClient) SendHB(topic string) {
 	}()
 }
 
-func (cli *MqttClient) SetUserPass(user, pass string){
+func (cli *MqttClient) SetUserPass(user, pass string) {
 	cli.user = user
 	cli.pass = pass
 }
 
-func (cli *MqttClient) SetPort(port string){
+func (cli *MqttClient) SetPort(port string) {
 	cli.port = port
 }
 
@@ -77,7 +80,7 @@ func (cli *MqttClient) Connect() error {
 	msg.SetWillTopic([]byte(cli.name))
 	msg.SetWillMessage([]byte(cli.name + " client disconnected"))
 
-	if cli.user != ""{
+	if cli.user != "" {
 		msg.SetUsername([]byte(cli.user))
 		msg.SetPassword([]byte(cli.pass))
 	}
@@ -100,6 +103,33 @@ func (cli *MqttClient) Connect() error {
 	}
 
 	return err
+}
+
+func (cli *MqttClient) reconnect (){
+
+	reconnectingMutex.Lock()
+	if reconnecting == false {
+		reconnecting = true
+		reconnectingMutex.Unlock()
+	} else {
+		reconnectingMutex.Unlock()
+		return
+	}
+
+	for {
+		log.Println("Trying to reconnect ...")
+		cli.Connect()
+
+		if cli.isConnected() {
+
+			reconnectingMutex.Lock()
+			reconnecting = false
+			reconnectingMutex.Unlock()
+			return
+		}
+
+		time.Sleep(time.Second)
+	}
 }
 
 func (cli *MqttClient) setConnected(c bool) {
@@ -149,6 +179,7 @@ func (cli *MqttClient) publish(topic string, value interface{}, retain bool) {
 
 	if !cli.isConnected() {
 		log.Println("Client is not connected, can't send", topic, value)
+		go cli.reconnect()
 		return
 	}
 
@@ -164,8 +195,10 @@ func (cli *MqttClient) publish(topic string, value interface{}, retain bool) {
 	if err != nil {
 		log.Println("Error :", err)
 		cli.setConnected(false)
+		go cli.reconnect()
 
-		for {
+		/*for {
+			log.Println("Trying to reconnect ...")
 			cli.Connect()
 
 			if cli.isConnected() {
@@ -174,7 +207,7 @@ func (cli *MqttClient) publish(topic string, value interface{}, retain bool) {
 			}
 
 			time.Sleep(time.Second)
-		}
+		}*/
 	}
 }
 
